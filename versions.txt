@@ -69,3 +69,13 @@
 • Docker File Updated : Mediainfo, Ffmpeg 
 • Use pyrofork for Peer ID Invalid error
 • version.txt file for updates logs.
+
+──「 Version  V.2.6 」──
+**Minor Update** 
+• Implemented Settings.
+• New Command:
+  /streamremove 
+  /multitaskfile
+  /multitasklink 
+  /compress
+• Implement Some Help Command
