@@ -46,7 +46,7 @@ Press Below Button to Deploy!
 - `Stream Remove` - 𝑅𝑒𝑚𝑜𝑣𝑒 𝐴𝑢𝑑𝑖𝑜𝑠 𝑜𝑟 𝑆𝑢𝑏𝑡𝑖𝑡𝑙𝑒𝑠
 - `Multitaskfile` - For File Changemetadata, Rename, Changeindexaudio, Changeindexsub = multitaskfile 
 - `Multitasklink ` - For link  [Workers & Seedr Links] Metadata, Rename, Indexaudio, Indexsub = multitasklink
-- `compress  - compress the file as 480p ,libopus[Anime & Webseries Best]
+- `Compress`  - compress the file as 480p ,libopus[Anime & Webseries Best]
 - `Swap Audio`: Adjusts metadata or index information for audio files."
 - `Swap Subtitles`: Manages and updates index or metadata for subtitle files.
 - `Attach photo attachment.jpg`: Attaches specific photos like attachment.jpg.
