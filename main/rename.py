@@ -56,6 +56,9 @@ SWAP_INDEX_ENABLED = True
 MULTITASK_ENABLED = True
 COMPRESS_ENABLED = True
 
+#varibles for streameremove
+selected_streams = set()
+downloaded = None
 
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 # Command handler to start the interaction (only in admin)
