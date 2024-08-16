@@ -19,7 +19,7 @@ from main.utils import heroku_restart, upload_files, download_media
 import aiohttp
 from pyrogram.errors import RPCError, FloodWait
 import asyncio
-from main.ffmpeg import remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file, extract_audio_stream, extract_subtitle_stream, extract_video_stream, extract_audios_from_file, extract_subtitles_from_file, extract_video_from_file, get_mediainfo
+from main.ffmpeg import remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file, extract_audio_stream, extract_subtitle_stream, extract_video_stream, extract_audios_from_file, extract_subtitles_from_file, extract_video_from_file, get_mediainfo, compress_video
 from googleapiclient.http import MediaFileUpload
 from main.gdrive import upload_to_google_drive, extract_id_from_url, copy_file, get_files_in_folder, drive_service
 from googleapiclient.errors import HttpError
@@ -65,26 +65,32 @@ async def bot_settings_command(_, msg):
 
 # Inline function to display user settings with inline buttons
 async def display_bot_settings_inline(msg):
-    global METADATA_ENABLED, PHOTO_ATTACH_ENABLED, MIRROR_ENABLED, RENAME_ENABLED, REMOVETAGS_ENABLED, CHANGE_INDEX_ENABLED
+    global METADATA_ENABLED, PHOTO_ATTACH_ENABLED, MIRROR_ENABLED, RENAME_ENABLED, REMOVETAGS_ENABLED, SWAP_INDEX_ENABLED, MULTITASK_ENABLED, STREAMREMOVE_ENABLED, COMPRESS_ENABLED
 
     metadata_status = "✅ Enabled" if METADATA_ENABLED else "❌ Disabled"
     photo_attach_status = "✅ Enabled" if PHOTO_ATTACH_ENABLED else "❌ Disabled"
     mirror_status = "✅ Enabled" if MIRROR_ENABLED else "❌ Disabled"
     rename_status = "✅ Enabled" if RENAME_ENABLED else "❌ Disabled"
     removealltags_status = "✅ Enabled" if REMOVETAGS_ENABLED else "❌ Disabled"
-    change_index_status = "✅ Enabled" if CHANGE_INDEX_ENABLED else "❌ Disabled"
-    merge_video_status = "✅ Enabled" if MERGE_ENABLED else "❌ Disabled"    
-    
+    swap_index_status = "✅ Enabled" if SWAP_INDEX_ENABLED else "❌ Disabled"
+    merge_video_status = "✅ Enabled" if MERGE_ENABLED else "❌ Disabled"  
+    multitask_status = "✅ Enabled" if MULTITASK_ENABLED else "❌ Disabled"
+    streamremove_status = "✅ Enabled" if STREAMREMOVE_ENABLED else "❌ Disabled"    
+    compress_status = "✅ Enabled" if COMPRESS_ENABLED else "❌ Disabled"    
+            
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton("💠", callback_data="sunrises24_bot_updates")],            
             [InlineKeyboardButton(f"{rename_status} Change Rename 📝", callback_data="toggle_rename")],
             [InlineKeyboardButton(f"{removealltags_status} Remove All Tags 📛", callback_data="toggle_removealltags")],
             [InlineKeyboardButton(f"{metadata_status} Change Metadata ☄️", callback_data="toggle_metadata")],            
-            [InlineKeyboardButton(f"{change_index_status} Change Index ♻️", callback_data="toggle_change_index")],
+            [InlineKeyboardButton(f"{swap_index_status} Swap Index ♻️", callback_data="toggle_swap_index")],
             [InlineKeyboardButton(f"{merge_video_status} Merge Video 🎞️", callback_data="toggle_merge_video")],
             [InlineKeyboardButton(f"{photo_attach_status} Attach Photo 🖼️", callback_data="toggle_photo_attach")],                        
-            [InlineKeyboardButton(f"{mirror_status} Mirror 💽", callback_data="toggle_mirror")],            
+            [InlineKeyboardButton(f"{mirror_status} Mirror 💽", callback_data="toggle_mirror")], 
+            [InlineKeyboardButton(f"{multitask_status} MultiTask ⏩", callback_data="toggle_multitask")],
+            [InlineKeyboardButton(f"{streamremove_status} Stream Remove 🔊", callback_data="toggle_streamremove")],
+            [InlineKeyboardButton(f"{compress_status} Compress 🗜️", callback_data="toggle_compress")],
             [InlineKeyboardButton("Close ❌", callback_data="del")],
             [InlineKeyboardButton("💠", callback_data="sunrises24_bot_updates")]
         ]
@@ -140,11 +146,11 @@ async def toggle_multitask_callback(_, callback_query):
     MIRROR_ENABLED = not MIRROR_ENABLED
     await update_settings_message(callback_query.message)
 
-@Client.on_callback_query(filters.regex("^toggle_change_index$"))
-async def toggle_change_index_callback(_, callback_query):
-    global CHANGE_INDEX_ENABLED
+@Client.on_callback_query(filters.regex("^toggle_swap_index$"))
+async def toggle_swap_index_callback(_, callback_query):
+    global SWAP_INDEX_ENABLED
 
-    CHANGE_INDEX_ENABLED = not CHANGE_INDEX_ENABLED
+    SWAP_INDEX_ENABLED = not SWAP_INDEX_ENABLED
     await update_settings_message(callback_query.message)
 
 @Client.on_callback_query(filters.regex("^toggle_merge_video$"))
@@ -154,6 +160,27 @@ async def toggle_merge_video_callback(_, callback_query):
     MERGE_ENABLED = not MERGE_ENABLED
     await update_settings_message(callback_query.message)
     
+@Client.on_callback_query(filters.regex("^toggle_multitask$"))
+async def toggle_multitask_callback(_, callback_query):
+    global MULTITASK_ENABLED
+
+    MULTITASK_ENABLED = not MULTITASK_ENABLED
+    await update_settings_message(callback_query.message)
+    
+@Client.on_callback_query(filters.regex("^toggle_streamremove$"))
+async def toggle_streamremove_callback(_, callback_query):
+    global STREAMREMOVE_ENABLED
+
+    STREAMREMOVE_ENABLED = not STREAMREMOVE_ENABLED
+    await update_settings_message(callback_query.message)
+
+@Client.on_callback_query(filters.regex("^toggle_compress$"))
+async def toggle_compress_callback(_, callback_query):
+    global COMPRESS_ENABLED
+
+    COMPRESS_ENABLED = not COMPRESS_ENABLED
+    await update_settings_message(callback_query.message)
+    
 # Callback query handler for the "sunrises24_bot_updates" button
 @Client.on_callback_query(filters.regex("^sunrises24_bot_updates$"))
 async def sunrises24_bot_updates_callback(_, callback_query):
@@ -161,7 +188,7 @@ async def sunrises24_bot_updates_callback(_, callback_query):
 
 
 async def update_settings_message(message):
-    global METADATA_ENABLED, PHOTO_ATTACH_ENABLED, MIRROR_ENABLED, RENAME_ENABLED, REMOVETAGS_ENABLED, CHANGE_INDEX_ENABLED
+    global METADATA_ENABLED, PHOTO_ATTACH_ENABLED, MIRROR_ENABLED, RENAME_ENABLED, REMOVETAGS_ENABLED, SWAP_INDEX_ENABLED, MULTITASK_ENABLED, STREAMREMOVE_ENABLED, COMPRESS_ENABLED
 
     metadata_status = "✅ Enabled" if METADATA_ENABLED else "❌ Disabled"
     photo_attach_status = "✅ Enabled" if PHOTO_ATTACH_ENABLED else "❌ Disabled"
@@ -169,7 +196,11 @@ async def update_settings_message(message):
     rename_status = "✅ Enabled" if RENAME_ENABLED else "❌ Disabled"
     removealltags_status = "✅ Enabled" if REMOVETAGS_ENABLED else "❌ Disabled"
     change_index_status = "✅ Enabled" if CHANGE_INDEX_ENABLED else "❌ Disabled"
-    merge_video_status = "✅ Enabled" if MERGE_ENABLED else "❌ Disabled"    
+    merge_video_status = "✅ Enabled" if MERGE_ENABLED else "❌ Disabled"   
+    multitask_status = "✅ Enabled" if MULTITASK_ENABLED else "❌ Disabled"    
+    streamremove_status = "✅ Enabled" if STREAMREMOVE_ENABLED else "❌ Disabled"    
+    compress_status = "✅ Enabled" if COMPRESS_ENABLED else "❌ Disabled"    
+    
       
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -180,13 +211,17 @@ async def update_settings_message(message):
             [InlineKeyboardButton(f"{change_index_status} Change Index ♻️", callback_data="toggle_change_index")],
             [InlineKeyboardButton(f"{merge_video_status} Merge Video 🎞️", callback_data="toggle_merge_video")],
             [InlineKeyboardButton(f"{photo_attach_status} Attach Photo 🖼️", callback_data="toggle_photo_attach")],                        
-            [InlineKeyboardButton(f"{mirror_status} Mirror 💽", callback_data="toggle_mirror")],            
+            [InlineKeyboardButton(f"{mirror_status} Mirror 💽", callback_data="toggle_mirror")],
+            [InlineKeyboardButton(f"{multitask_status} MultiTask ⏩", callback_data="toggle_multitask")],
+            [InlineKeyboardButton(f"{streamremove_status} Stream Remove 🔊", callback_data="toggle_streamremove")],
+            [InlineKeyboardButton(f"{compress_status} Compress 🗜️", callback_data="toggle_compress")],
             [InlineKeyboardButton("Close ❌", callback_data="del")],
             [InlineKeyboardButton("💠", callback_data="sunrises24_bot_updates")]
         ]
     )
 
     await message.edit_text("Use inline buttons to manage your settings:", reply_markup=keyboard)
+    
     
     
 
@@ -576,6 +611,13 @@ async def mirror_to_google_drive(bot, msg: Message):
 #Rename Command
 @Client.on_message(filters.private & filters.command("rename"))
 async def rename_file(bot, msg):
+    global RENAME_ENABLED
+
+    if not RENAME_ENABLED:
+        return await msg.reply_text("Rename feature is currently disabled.")
+        
+    user_id = msg.from_user.id
+    
     if len(msg.command) < 2 or not msg.reply_to_message:
         return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, .zip).")
 
@@ -858,12 +900,12 @@ async def attach_photo(bot, msg: Message):
 
 # Command handler
 # Command handler for changing audio index
-@Client.on_message(filters.private & filters.command("changeindexaudio"))
+@Client.on_message(filters.private & filters.command("swapaudio"))
 async def change_index_audio(bot, msg):
-    global CHANGE_INDEX_ENABLED
+    global SWAP_INDEX_ENABLED
 
-    if not CHANGE_INDEX_ENABLED:
-        return await msg.reply_text("The changeindexaudio feature is currently disabled.")
+    if not SWAP_INDEX_ENABLED:
+        return await msg.reply_text("The swap audio index feature is currently disabled.")
 
     reply = msg.reply_to_message
     if not reply:
@@ -984,12 +1026,12 @@ async def change_index_audio(bot, msg):
 #changeindex subtitles 
 # Command to change index subtitle
 # Command handler for changing subtitle index
-@Client.on_message(filters.private & filters.command("changeindexsub"))
-async def change_index_subtitle(bot, msg):
-    global CHANGE_INDEX_ENABLED
+@Client.on_message(filters.private & filters.command("swapsubtitles"))
+async def swapaudios(bot, msg):
+    global SWAP_INDEX_ENABLED
 
-    if not CHANGE_INDEX_ENABLED:
-        return await msg.reply_text("The changeindexsub feature is currently disabled.")
+    if not SWAP_INDEX_ENABLED:
+        return await msg.reply_text("The swap subitles index feature is currently disabled.")
 
     reply = msg.reply_to_message
     if not reply:
@@ -2613,7 +2655,752 @@ async def ping(bot, msg):
     time_taken_s = (end_t - start_t) * 1000
     await rm.edit(f"Pong!📍\n{time_taken_s:.3f} ms")
 
+@Client.on_message(filters.private & filters.command("multitaskfile"))
+async def multitask_file(bot, msg: Message):
+    global MULTITASK_ENABLED
+
+    if not MULTITASK_ENABLED:
+        return await msg.reply_text("Multi Task feature are currently disabled.")
+
+    user_id = msg.from_user.id
+
+    # Fetch metadata titles from the database
+    metadata_titles = await db.get_metadata_titles(user_id)
+    video_title = metadata_titles.get('video_title', '')
+    audio_title = metadata_titles.get('audio_title', '')
+    subtitle_title = metadata_titles.get('subtitle_title', '')
+
+    if not any([video_title, audio_title, subtitle_title]):
+        return await msg.reply_text("Metadata titles are not set. Please set metadata titles using `/setmetadata video_title audio_title subtitle_title`.")
+
+    reply = msg.reply_to_message
+    if not reply:
+        return await msg.reply_text("Please reply to a media file with the change command\nFormat: `/change a-2 -m -n filename.mkv`")
+
+    if len(msg.command) < 5 or '-m' not in msg.command or '-n' not in msg.command:
+        return await msg.reply_text("Please provide the correct format\nFormat: `/change a-2 -m -n filename.mkv`")
+
+    index_cmd = msg.command[1]
+    metadata_flag_index = msg.command.index('-m')
+    output_flag_index = msg.command.index('-n')
+    output_filename = " ".join(msg.command[output_flag_index + 1:]).strip()
+
+    if not output_filename.lower().endswith(('.mkv', '.mp4', '.avi')):
+        return await msg.reply_text("Invalid file extension. Please use a valid video file extension (e.g., .mkv, .mp4, .avi).")
+
+    media = reply.document or reply.audio or reply.video
+    if not media:
+        return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the change command.")
+
+    sts = await msg.reply_text("🚀 Downloading media... ⚡")
+    c_time = time.time()
+    try:
+        downloaded = await reply.download(progress=progress_message, progress_args=("🚀 Download Started... ⚡️", sts, c_time))
+    except Exception as e:
+        await safe_edit_message(sts, f"Error downloading media: {e}")
+        return
+
+    # Output file path (temporary file)
+    intermediate_file = os.path.splitext(downloaded)[0] + "_indexed" + os.path.splitext(downloaded)[1]
+
+    index_params = index_cmd.split('-')
+    stream_type = index_params[0]
+    indexes = [int(i) - 1 for i in index_params[1:]]
+
+    # Construct the FFmpeg command to modify indexes
+    ffmpeg_cmd = ['ffmpeg', '-i', downloaded, '-map', '0:v']  # Always map video stream
+
+    for idx in indexes:
+        ffmpeg_cmd.extend(['-map', f'0:{stream_type}:{idx}'])
+
+    # Copy all subtitle streams if they exist
+    ffmpeg_cmd.extend(['-map', '0:s?'])
+
+    ffmpeg_cmd.extend(['-c', 'copy', intermediate_file, '-y'])
+
+    await safe_edit_message(sts, "💠 Changing audio indexing... ⚡")
+    process = await asyncio.create_subprocess_exec(*ffmpeg_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await process.communicate()
+
+    if process.returncode != 0:
+        await safe_edit_message(sts, f"❗ FFmpeg error: {stderr.decode('utf-8')}")
+        os.remove(downloaded)
+        if os.path.exists(intermediate_file):
+            os.remove(intermediate_file)
+        return
+
+    output_file = output_filename
+
+    await safe_edit_message(sts, "💠 Changing metadata... ⚡")
+    try:
+        change_video_metadata(intermediate_file, video_title, audio_title, subtitle_title, output_file)
+    except Exception as e:
+        await safe_edit_message(sts, f"Error changing metadata: {e}")
+        os.remove(downloaded)
+        os.remove(intermediate_file)
+        return
+
+    # Retrieve thumbnail from the database
+    thumbnail_file_id = await db.get_thumbnail(user_id)
+    file_thumb = None
+    if thumbnail_file_id:
+        try:
+            file_thumb = await bot.download_media(thumbnail_file_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(media, 'thumbs') and media.thumbs:
+            try:
+                file_thumb = await bot.download_media(media.thumbs[0].file_id)
+            except Exception as e:
+                file_thumb = None
+
+    filesize = os.path.getsize(output_file)
+    filesize_human = humanbytes(filesize)
+    cap = f"{output_filename}\n\n🌟 Size: {filesize_human}"
+
+    await safe_edit_message(sts, "💠 Uploading... ⚡")
+    c_time = time.time()
+
+    if filesize > FILE_SIZE_LIMIT:
+        file_link = await upload_to_google_drive(output_file, output_filename, sts)
+        button = [[InlineKeyboardButton("☁️ CloudUrl ☁️", url=f"{file_link}")]]
+        await msg.reply_text(
+            f"**File successfully changed audio index and metadata, then uploaded to Google Drive!**\n\n"
+            f"**Google Drive Link**: [View File]({file_link})\n\n"
+            f"**Uploaded File**: {output_filename}\n"
+            f"**Request User:** {msg.from_user.mention}\n\n"
+            f"**Size**: {filesize_human}",
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+    else:
+        try:
+            await bot.send_document(
+                msg.chat.id,
+                document=output_file,
+                file_name=output_filename,
+                thumb=file_thumb,
+                caption=cap,
+                progress=progress_message,
+                progress_args=("💠 Upload Started... ⚡", sts, c_time)
+            )
+        except Exception as e:
+            return await safe_edit_message(sts, f"Error: {e}")
+
+    os.remove(downloaded)
+    os.remove(intermediate_file)
+    os.remove(output_file)
+    if file_thumb and os.path.exists(file_thumb):
+        os.remove(file_thumb)
+    await sts.delete()
+
+@Client.on_message(filters.private & filters.command("multitasklink"))
+async def changeleech(bot, msg: Message):
+    if len(msg.command) < 2 or not msg.reply_to_message:
+        return await msg.reply_text("Please reply to a file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).")
+
+    reply = msg.reply_to_message
+    new_name = msg.text.split(" ", 1)[1]
+
+    if not new_name.endswith((".mkv", ".mp4", ".zip")):
+        return await msg.reply_text("Please specify a filename ending with .mkv, .mp4, or .zip.")
+
+    media = reply.document or reply.audio or reply.video or reply.text
+
+    sts = await msg.reply_text("🚀 Downloading... ⚡")
+    c_time = time.time()
+
+    if reply.text and ("seedr" in reply.text or "workers" in reply.text):
+        await handle_link_download_multi(bot, msg, reply.text, new_name, media, sts, c_time)
+    else:
+        if not media:
+            return await msg.reply_text("Please reply to a valid file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).")
+
+        try:
+            downloaded = await reply.download(file_name=new_name, progress=progress_message, progress_args=("🚀 Download Started... ⚡️", sts, c_time))
+        except RPCError as e:
+            return await sts.edit(f"Download failed: {e}")
+
+        if not os.path.exists(downloaded):
+            return await sts.edit("File not found after download. Please check the reply and try again.")
+
+        filesize = humanbytes(os.path.getsize(downloaded))
+
+        # Change indexing and metadata if required
+        if len(msg.command) > 2:
+            await change_metadata_and_index(bot, msg, downloaded, new_name, media, sts, c_time)
+
+        # Thumbnail handling
+        thumbnail_file_id = await db.get_thumbnail(msg.from_user.id)
+        og_thumbnail = None
+        if thumbnail_file_id:
+            try:
+                og_thumbnail = await bot.download_media(thumbnail_file_id)
+            except Exception:
+                pass
+        else:
+            if hasattr(media, 'thumbs') and media.thumbs:
+                try:
+                    og_thumbnail = await bot.download_media(media.thumbs[0].file_id)
+                except Exception:
+                    pass
+
+        await sts.edit("💠 Uploading... ⚡")
+        c_time = time.time()
+
+        if os.path.getsize(downloaded) > FILE_SIZE_LIMIT:
+            file_link = await upload_to_google_drive(downloaded, new_name, sts)
+            await msg.reply_text(f"File uploaded to Google Drive!\n\n📁 **File Name:** {new_name}\n💾 **Size:** {filesize}\n🔗 **Link:** {file_link}")
+        else:
+            try:
+                await bot.send_document(msg.chat.id, document=downloaded, thumb=og_thumbnail, caption=new_name, progress=progress_message, progress_args=("💠 Upload Started... ⚡", sts, c_time))
+            except ValueError as e:
+                return await sts.edit(f"Upload failed: {e}")
+            except TimeoutError as e:
+                return await sts.edit(f"Upload timed out: {e}")
+
+        try:
+            if og_thumbnail and os.path.exists(og_thumbnail):
+                os.remove(og_thumbnail)
+            if os.path.exists(downloaded):
+                os.remove(downloaded)
+        except Exception as e:
+            print(f"Error deleting files: {e}")
+
+        await sts.delete()
+
+async def handle_link_download_multi(bot, msg: Message, link: str, new_name: str, media, sts, c_time):
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(link) as resp:
+                if resp.status == 200:
+                    with open(new_name, 'wb') as f:
+                        f.write(await resp.read())
+                else:
+                    await sts.edit(f"Failed to download file from link. Status code: {resp.status}")
+                    return
+    except Exception as e:
+        await sts.edit(f"Error during download: {e}")
+        return
+
+    if not os.path.exists(new_name):
+        await sts.edit("File not found after download. Please check the link and try again.")
+        return
+
+    filesize = humanbytes(os.path.getsize(new_name))
+
+    # Change indexing and metadata if required
+    if len(msg.command) > 2:
+        await change_metadata_and_index(bot, msg, new_name, new_name, media, sts, c_time)
+
+    # Thumbnail handling
+    thumbnail_file_id = await db.get_thumbnail(msg.from_user.id)
+    og_thumbnail = None
+    if thumbnail_file_id:
+        try:
+            og_thumbnail = await bot.download_media(thumbnail_file_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(media, 'thumbs') and media.thumbs:
+            try:
+                og_thumbnail = await bot.download_media(media.thumbs[0].file_id)
+            except Exception:
+                pass
+
+    await sts.edit("💠 Uploading... ⚡")
+    c_time = time.time()
+
+    if os.path.getsize(new_name) > FILE_SIZE_LIMIT:
+        file_link = await upload_to_google_drive(new_name, new_name, sts)
+        await msg.reply_text(f"File uploaded to Google Drive!\n\n📁 **File Name:** {new_name}\n💾 **Size:** {filesize}\n🔗 **Link:** {file_link}")
+    else:
+        try:
+            await bot.send_document(msg.chat.id, document=new_name, thumb=og_thumbnail, caption=f"{new_name}\n\n🌟 Size: {filesize}", progress=progress_message, progress_args=("💠 Upload Started... ⚡", sts, c_time))
+        except ValueError as e:
+            return await sts.edit(f"Upload failed: {e}")
+        except TimeoutError as e:
+            return await sts.edit(f"Upload timed out: {e}")
+
+    try:
+        if og_thumbnail and os.path.exists(og_thumbnail):
+            os.remove(og_thumbnail)
+        if os.path.exists(new_name):
+            os.remove(new_name)
+    except Exception as e:
+        print(f"Error deleting files: {e}")
+
+    await sts.delete()
+
+async def change_metadata_and_index(bot, msg, downloaded, new_name, media, sts, c_time):
+    global METADATA_ENABLED, CHANGE_INDEX_ENABLED
+
+    if not (METADATA_ENABLED and CHANGE_INDEX_ENABLED):
+        await msg.reply_text("One or more required features are currently disabled.")
+        return
+
+    user_id = msg.from_user.id
+
+    # Fetch metadata titles from the database
+    metadata_titles = await db.get_metadata_titles(user_id)
+    video_title = metadata_titles.get('video_title', '')
+    audio_title = metadata_titles.get('audio_title', '')
+    subtitle_title = metadata_titles.get('subtitle_title', '')
+
+    if not any([video_title, audio_title, subtitle_title]):
+        await msg.reply_text("Metadata titles are not set. Please set metadata titles using `/setmetadata video_title audio_title subtitle_title`.")
+        return
+
+    if len(msg.command) < 5 or '-m' not in msg.command or '-n' not in msg.command:
+        await msg.reply_text("Please provide the correct format\nFormat: `/change a-2 -m -n filename.mkv`")
+        return
+
+    index_cmd = msg.command[1]
+    metadata_flag_index = msg.command.index('-m')
+    output_flag_index = msg.command.index('-n')
+    output_filename = " ".join(msg.command[output_flag_index + 1:]).strip()
+
+    if not output_filename.lower().endswith(('.mkv', '.mp4', '.avi')):
+        await msg.reply_text("Invalid file extension. Please use a valid video file extension (e.g., .mkv, .mp4, .avi).")
+        return
+
+    # Output file path (temporary file)
+    intermediate_file = os.path.splitext(downloaded)[0] + "_indexed" + os.path.splitext(downloaded)[1]
+
+    index_params = index_cmd.split('-')
+    stream_type = index_params[0]
+    indexes = [int(i) - 1 for i in index_params[1:]]
+
+    # Construct the FFmpeg command to modify indexes
+    ffmpeg_cmd = ['ffmpeg', '-i', downloaded, '-map', '0:v']  # Always map video stream
+
+    for idx in indexes:
+        ffmpeg_cmd.extend(['-map', f'0:{stream_type}:{idx}'])
+
+    # Copy all subtitle streams if they exist
+    ffmpeg_cmd.extend(['-map', '0:s?'])
+
+    ffmpeg_cmd.extend(['-c', 'copy', intermediate_file, '-y'])
+
+    await safe_edit_message(sts, "💠 Changing audio indexing... ⚡")
+    process = await asyncio.create_subprocess_exec(*ffmpeg_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await process.communicate()
+
+    if process.returncode != 0:
+        await safe_edit_message(sts, f"❗ FFmpeg error: {stderr.decode('utf-8')}")
+        os.remove(downloaded)
+        if os.path.exists(intermediate_file):
+            os.remove(intermediate_file)
+        return
+
+    output_file = output_filename
+
+    await safe_edit_message(sts, "💠 Changing metadata... ⚡")
+    try:
+        change_video_metadata(intermediate_file, video_title, audio_title, subtitle_title, output_file)
+    except Exception as e:
+        await safe_edit_message(sts, f"Error changing metadata: {e}")
+        os.remove(downloaded)
+        os.remove(intermediate_file)
+        return
+
+    # Retrieve thumbnail from the database
+    thumbnail_file_id = await db.get_thumbnail(user_id)
+    file_thumb = None
+    if thumbnail_file_id:
+        try:
+            file_thumb = await bot.download_media(thumbnail_file_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(media, 'thumbs') and media.thumbs:
+            try:
+                file_thumb = await bot.download_media(media.thumbs[0].file_id)
+            except Exception as e:
+                file_thumb = None
+
+    filesize = os.path.getsize(output_file)
+    filesize_human = humanbytes(filesize)
+    cap = f"{output_filename}\n\n🌟 Size: {filesize_human}"
+
+    await safe_edit_message(sts, "💠 Uploading... ⚡")
+    c_time = time.time()
+
+    if filesize > FILE_SIZE_LIMIT:
+        file_link = await upload_to_google_drive(output_file, output_filename, sts)
+        button = [[InlineKeyboardButton("☁️ CloudUrl ☁️", url=f"{file_link}")]]
+        await msg.reply_text(
+            f"**File successfully changed audio index and metadata, then uploaded to Google Drive!**\n\n"
+            f"**Google Drive Link**: [View File]({file_link})\n\n"
+            f"**Uploaded File**: {output_filename}\n"
+            f"**Request User:** {msg.from_user.mention}\n\n"
+            f"**Size**: {filesize_human}",
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+    else:
+        try:
+            await bot.send_document(
+                msg.chat.id,
+                document=output_file,
+                file_name=output_filename,
+                thumb=file_thumb,
+                caption=cap,
+                progress=progress_message,
+                progress_args=("💠 Upload Started... ⚡", sts, c_time)
+            )
+        except Exception as e:
+            return await safe_edit_message(sts, f"Error: {e}")
+
+    os.remove(downloaded)
+    os.remove(intermediate_file)
+    os.remove(output_file)
+    if file_thumb and os.path.exists(file_thumb):
+        os.remove(file_thumb)
+    await sts.delete()
+
+#handler is streamremove
+@Client.on_message(filters.private & filters.command("streamremove"))
+async def streamremove(bot, msg):
+    global STREAMREMOVE_ENABLED
+    global selected_streams
+    global downloaded
+    global output_filename
+
+    if not STREAMREMOVE_ENABLED:
+        return await msg.reply_text("🚫 The streamremove feature is currently disabled.")
+
+    reply = msg.reply_to_message
+    if not reply:
+        return await msg.reply_text("❗ Please reply to a media file with the command\nFormat: `/streamremove -n filename.mkv`")
+
+    if len(msg.command) < 3 or msg.command[1] != "-n":
+        return await msg.reply_text("Please provide the filename with the `-n` flag\nFormat: `/streamremove -n filename.mkv`")
+
+    output_filename = " ".join(msg.command[2:]).strip()
+
+    if not output_filename.lower().endswith(('.mkv', '.mp4', '.avi')):
+        return await msg.reply_text("Invalid file extension. Please use a valid video file extension (e.g., .mkv, .mp4, .avi).")
+
+    media = reply.document or reply.audio or reply.video
+    if not media:
+        return await msg.reply_text("❗ Please reply to a valid media file (audio, video, or document) with the command.")
+
+    sts = await msg.reply_text("🚀 Downloading media... ⚡")
+    c_time = time.time()
+    try:
+        downloaded = await reply.download(progress=progress_message, progress_args=("🚀 Download Started... ⚡️", sts, c_time))
+    except Exception as e:
+        await sts.edit(f"❌ Error downloading media: {e}")
+        return
+
+    # Get the available streams
+    ffprobe_cmd = [
+        'ffprobe', '-v', 'error', '-show_entries', 'stream=index:stream_tags=language:stream=codec_type', '-of', 'json', downloaded
+    ]
+    process = await asyncio.create_subprocess_exec(*ffprobe_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await process.communicate()
+
+    if process.returncode != 0:
+        await sts.edit(f"❗ FFprobe error: {stderr.decode('utf-8')}")
+        os.remove(downloaded)
+        return
+
+    streams = json.loads(stdout.decode('utf-8')).get('streams', [])
+    audio_video_streams = []
+    subtitle_streams = []
+
+    for stream in streams:
+        stream_index = stream['index']
+        language = stream.get('tags', {}).get('language', 'unknown')
+        codec_type = stream['codec_type']
+
+        if codec_type == 'audio':
+            if language == 'tel':
+                audio_video_streams.append(f"{stream_index} 🎵 Telugu Audio")
+            elif language == 'tam':
+                audio_video_streams.append(f"{stream_index} 🎵 Tamil Audio")
+            elif language == 'hin':
+                audio_video_streams.append(f"{stream_index} 🎵 Hindi Audio")
+            else:
+                audio_video_streams.append(f"{stream_index} 🎵 Audio - {language}")
+        elif codec_type == 'subtitle':
+            if language == 'eng':
+                subtitle_streams.append(f"{stream_index} 📝 English Subtitle")
+            else:
+                subtitle_streams.append(f"{stream_index} 📝 {language} - Subtitle")
+        elif codec_type == 'video':
+            audio_video_streams.append(f"{stream_index} 📹 Video")
+
+    # Build the inline keyboard with available streams
+    buttons = []
+    max_len = max(len(audio_video_streams), len(subtitle_streams))
+    for i in range(max_len):
+        row = []
+        if i < len(audio_video_streams):
+            row.append(InlineKeyboardButton(f"{audio_video_streams[i]}", callback_data=f"toggle_{audio_video_streams[i].split()[0]}"))
+        if i < len(subtitle_streams):
+            row.append(InlineKeyboardButton(f"{subtitle_streams[i]}", callback_data=f"toggle_{subtitle_streams[i].split()[0]}"))
+        buttons.append(row)
+
+    buttons.append([InlineKeyboardButton("🔄 Reverse Selection", callback_data="reverse")])
+    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="cancel"), InlineKeyboardButton("✅ Done", callback_data="done")])
+    markup = InlineKeyboardMarkup(buttons)
+
+    selected_streams.clear()
+    start_time = time.time()
+    message = await sts.edit("Select the streams you want to remove (you have 60 seconds):", reply_markup=markup)
+
+    # Wait for 60 seconds
+    await asyncio.sleep(60)
+
+    if time.time() - start_time < 60:
+        # If the user has not interacted within 60 seconds, cancel the process
+        if message:
+            await message.edit("🕒 Time's up! Selection process has been canceled.")
+            await asyncio.sleep(5)  # Keep the message visible for a short time before deleting
+            await message.delete()
+            if downloaded:
+                os.remove(downloaded)
+
+
+
+@Client.on_callback_query(filters.regex(r'toggle_\d+|done|cancel|reverse'))
+async def callback_query_handler(bot, callback_query: CallbackQuery):
+    global selected_streams
+    global downloaded
+    global output_filename
+    data = callback_query.data
+
+    # Check if the user who initiated the command matches the callback query user
+    if callback_query.from_user.id != callback_query.message.reply_to_message.from_user.id:
+        return
+
+    if data == "cancel":
+        await callback_query.message.delete()
+        if downloaded:
+            os.remove(downloaded)
+        return
+
+    if data == "reverse":
+        buttons = callback_query.message.reply_markup.inline_keyboard
+        all_indices = {btn.callback_data.split('_')[1] for row in buttons for btn in row if btn.callback_data.startswith('toggle_')}
+        selected_streams.symmetric_difference_update(all_indices)
+
+        # Update button text
+        for row in buttons:
+            for button in row:
+                if button.callback_data.startswith("toggle_"):
+                    index = button.callback_data.split('_')[1]
+                    if index in selected_streams:
+                        button.text = f"✅ {button.text.lstrip('✅').strip()}"
+                    else:
+                        button.text = button.text.lstrip('✅').strip()
+
+        await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+        return
+
+    if data == "done":
+        sts = await callback_query.message.edit_text("💠 Removing selected streams... ⚡")
+        await process_media(bot, callback_query, selected_streams, downloaded, output_filename, sts)
+        return
+
+    # Toggle selection state
+    index = data.split('_')[1]
+    if index in selected_streams:
+        selected_streams.remove(index)
+    else:
+        selected_streams.add(index)
+
+    # Update buttons to reflect selection
+    buttons = callback_query.message.reply_markup.inline_keyboard
+    for row in buttons:
+        for button in row:
+            if button.callback_data == f"toggle_{index}":
+                if button.text.startswith("✅"):
+                    button.text = button.text[2:]  # Remove the checkmark
+                else:
+                    button.text = f"✅ {button.text}"  # Add the checkmark
+                break
+
+    await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+        
+# Process media function
+async def process_media(bot, callback_query, selected_streams, downloaded, output_filename, sts):
+    user_id = callback_query.from_user.id
+    original_message = callback_query.message.reply_to_message
+    output_file = output_filename
+
+    # Construct FFmpeg command to process media
+    ffmpeg_cmd = ['ffmpeg', '-i', downloaded, '-map', '0']
+    for idx in selected_streams:
+        ffmpeg_cmd.extend(['-map', f'-0:{idx}'])
+    ffmpeg_cmd.extend(['-c', 'copy', output_file, '-y'])
+
+    # Execute FFmpeg command
+    process = await asyncio.create_subprocess_exec(*ffmpeg_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await process.communicate()
+
+    if process.returncode != 0:
+        await safe_edit_message(sts, f"❗ FFmpeg error: {stderr.decode('utf-8')}")
+        os.remove(downloaded)
+        if os.path.exists(output_file):
+            os.remove(output_file)
+        return
+
+    # Retrieve thumbnail from the database
+    thumbnail_file_id = await db.get_thumbnail(user_id)
+    file_thumb = None
+    if thumbnail_file_id:
+        try:
+            file_thumb = await bot.download_media(thumbnail_file_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(original_message, 'thumbs') and original_message.thumbs:
+            try:
+                file_thumb = await bot.download_media(original_message.thumbs[0].file_id)
+            except Exception as e:
+                file_thumb = None
+
+    filesize = os.path.getsize(output_file)
+    filesize_human = humanbytes(filesize)
+    cap = f"{output_filename}\n\n🌟 Size: {filesize_human}"
+
+    await safe_edit_message(sts, "💠 Uploading... ⚡")
+    c_time = time.time()
+
+    if filesize > FILE_SIZE_LIMIT:
+        file_link = await upload_to_google_drive(output_file, output_filename, sts)
+        button = [[InlineKeyboardButton("☁️ CloudUrl ☁️", url=f"{file_link}")]]
+        await bot.send_message(
+            chat_id=user_id,
+            text=f"**File successfully stream remove and uploaded to Google Drive!**\n\n"
+                 f"**Google Drive Link**: [View File]({file_link})\n\n"
+                 f"**Uploaded File**: {output_filename}\n"
+                 f"**Request User:** {callback_query.from_user.mention}\n\n"
+                 f"**Size**: {filesize_human}",
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+    else:
+        try:
+            await bot.send_document(
+                chat_id=user_id,
+                document=output_file,
+                thumb=file_thumb,
+                caption=cap,
+                progress=progress_message,
+                progress_args=("💠 Upload Started... ⚡", sts, c_time)
+            )
+        except Exception as e:
+            await safe_edit_message(sts, f"Error: {e}")
+
+    os.remove(downloaded)
+    os.remove(output_file)
+    if file_thumb and os.path.exists(file_thumb):
+        os.remove(file_thumb)
+    await sts.delete()
+
     
+#handler is Compress
+@Client.on_message(filters.private & filters.command("compress"))
+async def compress_media(bot, msg: Message):
+    global COMPRESS_ENABLED
+
+    if not COMPRESS_ENABLED:
+        return await msg.reply_text("Compress feature is currently disabled.")
+        
+    user_id = msg.from_user.id
+
+    reply = msg.reply_to_message
+    if not reply:
+        return await msg.reply_text("Please reply to a media file with the compress command\nFormat: `compress -n output_filename`")
+
+    if len(msg.command) < 3 or msg.command[1] != "-n":
+        return await msg.reply_text("Please provide the output filename with the `-n` flag\nFormat: `compress -n output_filename`")
+
+    output_filename = " ".join(msg.command[2:]).strip()
+
+    if not output_filename.lower().endswith(('.mkv', '.mp4', '.avi')):
+        return await msg.reply_text("Invalid file extension. Please use a valid video file extension (e.g., .mkv, .mp4, .avi).")
+
+    media = reply.document or reply.audio or reply.video
+    if not media:
+        return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the compress command.")
+
+    sts = await msg.reply_text("🚀 Downloading media... ⚡")
+    c_time = time.time()
+    try:
+        downloaded = await reply.download(progress=progress_message, progress_args=("🚀 Download Started... ⚡️", sts, c_time))
+    except Exception as e:
+        await safe_edit_message(sts, f"Error downloading media: {e}")
+        return
+
+    output_file = output_filename
+
+    # Retrieve metadata from the database
+    metadata_titles = await db.get_metadata_titles(user_id)
+    video_title = metadata_titles.get('video_title', '')
+    audio_title = metadata_titles.get('audio_title', '')
+    subtitle_title = metadata_titles.get('subtitle_title', '')
+
+    await safe_edit_message(sts, "💠 Compressing media... ⚡")
+    try:
+        compress_video(downloaded, output_file, video_title, audio_title, subtitle_title)
+    except Exception as e:
+        await safe_edit_message(sts, f"Error compressing media: {e}")
+        os.remove(downloaded)
+        return
+
+    # Retrieve thumbnail from the database
+    thumbnail_file_id = await db.get_thumbnail(user_id)
+    file_thumb = None
+    if thumbnail_file_id:
+        try:
+            file_thumb = await bot.download_media(thumbnail_file_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(media, 'thumbs') and media.thumbs:
+            try:
+                file_thumb = await bot.download_media(media.thumbs[0].file_id)
+            except Exception as e:
+                file_thumb = None
+
+    # Get media info and upload to Telegraph
+    media_info_html, media_info_link = await get_and_upload_mediainfo(bot, output_file, media)
+
+    filesize = os.path.getsize(output_file)
+    filesize_human = humanbytes(filesize)
+    cap = f"{output_filename}\n\n🌟 Size: {filesize_human}\n\n[MediaInfo ℹ️]({media_info_link})"
+
+    await safe_edit_message(sts, "💠 Uploading... ⚡")
+    c_time = time.time()
+
+    if filesize > FILE_SIZE_LIMIT:
+        file_link = await upload_to_google_drive(output_file, output_filename, sts)
+        button = [[InlineKeyboardButton("☁️ CloudUrl ☁️", url=f"{file_link}")]]
+        await msg.reply_text(
+            f"**File successfully compressed and uploaded to Google Drive!**\n\n"
+            f"**Google Drive Link**: [View File]({file_link})\n\n"
+            f"**Uploaded File**: {output_filename}\n"
+            f"**Request User:** {msg.from_user.mention}\n\n"
+            f"**Size**: {filesize_human}\n"
+            f"[MediaInfo ℹ️]({media_info_link})",
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+    else:
+        try:
+            await bot.send_document(msg.chat.id, document=output_file, thumb=file_thumb, caption=cap, progress=progress_message, progress_args=("💠 Upload Started... ⚡", sts, c_time))
+        except Exception as e:
+            return await safe_edit_message(sts, f"Error: {e}")
+
+    os.remove(downloaded)
+    os.remove(output_file)
+    if file_thumb and os.path.exists(file_thumb):
+        os.remove(file_thumb)
+    await sts.delete()
+    
+
 if __name__ == '__main__':
     app = Client("my_bot", bot_token=BOT_TOKEN)
     app.run()
