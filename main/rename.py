@@ -186,7 +186,6 @@ async def toggle_compress_callback(_, callback_query):
 async def sunrises24_bot_updates_callback(_, callback_query):
     await callback_query.answer("MADE BY @SUNRISES24BOTUPDATES ❤️", show_alert=True)    
 
-
 async def update_settings_message(message):
     global METADATA_ENABLED, PHOTO_ATTACH_ENABLED, MIRROR_ENABLED, RENAME_ENABLED, REMOVETAGS_ENABLED, SWAP_INDEX_ENABLED, MULTITASK_ENABLED, STREAMREMOVE_ENABLED, COMPRESS_ENABLED
 
@@ -901,7 +900,7 @@ async def attach_photo(bot, msg: Message):
 # Command handler
 # Command handler for changing audio index
 @Client.on_message(filters.private & filters.command("swapaudio"))
-async def change_index_audio(bot, msg):
+async def swap_audio(bot, msg):
     global SWAP_INDEX_ENABLED
 
     if not SWAP_INDEX_ENABLED:
@@ -1027,7 +1026,7 @@ async def change_index_audio(bot, msg):
 # Command to change index subtitle
 # Command handler for changing subtitle index
 @Client.on_message(filters.private & filters.command("swapsubtitles"))
-async def swapaudios(bot, msg):
+async def swap_subtiles(bot, msg):
     global SWAP_INDEX_ENABLED
 
     if not SWAP_INDEX_ENABLED:
