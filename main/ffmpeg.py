@@ -283,3 +283,56 @@ def get_mediainfo(file_path):
     if process.returncode != 0:
         raise Exception(f"Error getting media info: {stderr.decode().strip()}")
     return stdout.decode().strip()
+
+
+# Function to compress Ffmpeg information using compress command
+def compress_video(input_path, output_path, video_title, audio_title, subtitle_title):
+    command = [
+        'ffmpeg',
+        '-hide_banner',
+        '-loglevel', 'quiet',
+        '-i', input_path,
+        '-c:v', 'libx264',
+        '-crf', '28',
+        '-pix_fmt', 'yuv420p',
+        '-s', '854x480',
+        '-b:v', '150k',
+        '-c:a', 'libopus',
+        '-b:a', '35k',
+        '-preset', 'veryfast',
+        '-map', '0:v:0',  # Map the first video stream
+        '-map', '0:a',    # Map all audio streams
+        '-map', '0:s?',   # Map all subtitle streams if present
+        '-metadata', f'title={video_title}',
+        '-metadata:s:v:0', f'title={video_title}',
+        '-metadata:s:a', f'title={audio_title}',
+        '-metadata:s:s', f'title={subtitle_title}',
+        '-y',
+        output_path
+    ]
+    
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        raise Exception(f"FFmpeg error: {stderr.decode('utf-8')}")
+
+# Function to compress mediainfo information using compress command
+async def get_and_upload_mediainfo(bot, output_file, media):
+    media_info_html = get_mediainfo(output_file)
+
+    media_info_html = (
+        f"<strong>SUNRISES 24 BOT UPDATES</strong><br>"
+        f"<strong>MediaInfo X</strong><br>"
+        f"{media_info_html}"
+        f"<p>Rights Designed By Sᴜɴʀɪsᴇs Hᴀʀsʜᴀ 𝟸𝟺 🇮🇳 ᵀᴱᴸ</p>"
+    )
+
+    response = telegraph.post(
+        title="MediaInfo",
+        author="SUNRISES 24 BOT UPDATES",
+        author_url="https://t.me/Sunrises24BotUpdates",
+        text=media_info_html
+    )
+    link = f"https://graph.org/{response['path']}"
+
+    return media_info_html, link
