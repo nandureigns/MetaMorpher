@@ -2804,7 +2804,7 @@ async def multitask_file(bot, msg: Message):
 @Client.on_message(filters.private & filters.command("multitasklink"))
 async def changeleech(bot, msg: Message):
     if len(msg.command) < 2 or not msg.reply_to_message:
-        return await msg.reply_text("Please reply to a file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).")
+        return await msg.reply_text("Please reply to a file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).Please provide the correct format\nFormat: `/multitasklink a-2 -m -n filename.mkv`.")
 
     reply = msg.reply_to_message
     new_name = msg.text.split(" ", 1)[1]
@@ -2959,7 +2959,7 @@ async def change_metadata_and_index(bot, msg, downloaded, new_name, media, sts, 
         return
 
     if len(msg.command) < 5 or '-m' not in msg.command or '-n' not in msg.command:
-        await msg.reply_text("Please provide the correct format\nFormat: `/change a-2 -m -n filename.mkv`")
+        await msg.reply_text("Please provide the correct format\nFormat: `/multitasklink a-2 -m -n filename.mkv`")
         return
 
     index_cmd = msg.command[1]
