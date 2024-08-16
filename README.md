@@ -43,8 +43,12 @@ Press Below Button to Deploy!
 - `Extract Audios` - Extract audio from files.
 - `Extract Subtitles` - Extract subtitles from files.
 - `Extract Video` - Extract video from files.
-- `Change index audio`: Adjusts metadata or index information for audio files.
-- `Change Index Subtitles`: Manages and updates index or metadata for subtitle files.
+- `Stream Remove` - 𝑅𝑒𝑚𝑜𝑣𝑒 𝐴𝑢𝑑𝑖𝑜𝑠 𝑜𝑟 𝑆𝑢𝑏𝑡𝑖𝑡𝑙𝑒𝑠
+- `Multitaskfile` - For File Changemetadata, Rename, Changeindexaudio, Changeindexsub = multitaskfile 
+- `Multitasklink ` - For link  [Workers & Seedr Links] Metadata, Rename, Indexaudio, Indexsub = multitasklink
+- `compress  - compress the file as 480p ,libopus[Anime & Webseries Best]
+- `Swap Audio`: Adjusts metadata or index information for audio files."
+- `Swap Subtitles`: Manages and updates index or metadata for subtitle files.
 - `Attach photo attachment.jpg`: Attaches specific photos like attachment.jpg.
 - `Remove tags in files`: Cleans and removes tags or metadata from files.
 - `Merge`: Merges files and data [Video + Video].
@@ -99,8 +103,12 @@ extractsubtitles - 𝐸𝑥𝑡𝑟𝑎𝑐𝑡 𝑠𝑢𝑏𝑡𝑖𝑡𝑙𝑒
 extractvideo - 𝐸𝑥𝑡𝑟𝑎𝑐𝑡 𝑣𝑖𝑑𝑒𝑜 𝑓𝑟𝑜𝑚 𝑓𝑖𝑙𝑒𝑠.
 rename - 𝑟𝑒𝑝𝑙𝑎𝑦 𝑤𝑖𝑡ℎ 𝑓𝑖𝑙𝑒 𝑡𝑜 𝑅𝑒𝑛𝑎𝑚𝑒📝
 gofile - 𝑇ℎ𝑒 𝐹𝑖𝑙𝑒𝑠 𝑈𝑝𝑙𝑜𝑎𝑑 𝑇𝑜 𝐺𝑜𝑓𝑖𝑙𝑒 𝐿𝑖𝑛𝑘 🔗
-changeindexaudio - 𝑅𝑒𝑜𝑟𝑑𝑒𝑟 𝑡ℎ𝑒 𝑠𝑒𝑞𝑢𝑒𝑛𝑐𝑒 [a-1  𝑓𝑜𝑟 𝑟𝑒𝑚𝑜𝑣𝑒 𝑎𝑢𝑑𝑖𝑜 , a-2-1-3-4  𝑓𝑜𝑟 𝑠𝑤𝑎𝑝 𝑎𝑢𝑑𝑖𝑜]
-changeindexsub - 𝑅𝑒𝑜𝑟𝑑𝑒𝑟 𝑡ℎ𝑒 𝑠𝑒𝑞𝑢𝑒𝑛𝑐𝑒 [s-1  𝑓𝑜𝑟 𝑟𝑒𝑚𝑜𝑣𝑒 𝑠𝑢𝑏𝑡𝑖𝑡𝑙𝑒 , s-2-1-3-4  𝑓𝑜𝑟 𝑠𝑤𝑎𝑝 𝑠𝑢𝑏𝑡𝑖𝑡𝑙𝑒]
+streamremove  - 𝑅𝑒𝑚𝑜𝑣𝑒 𝐴𝑢𝑑𝑖𝑜𝑠 𝑜𝑟 𝑆𝑢𝑏𝑡𝑖𝑡𝑙𝑒𝑠
+multitaskfile - 𝐹𝑜𝑟 𝐹𝑖𝑙𝑒 𝐶ℎ𝑎𝑛𝑔𝑒𝑚𝑒𝑡𝑎𝑑𝑎𝑡𝑎, 𝑅𝑒𝑛𝑎𝑚𝑒, 𝐶ℎ𝑎𝑛𝑔𝑒𝑖𝑛𝑑𝑒𝑥𝑎𝑢𝑑𝑖𝑜, 𝐶ℎ𝑎𝑛𝑔𝑒𝑖𝑛𝑑𝑒𝑥𝑠𝑢𝑏 = 𝑚𝑢𝑙𝑡𝑖𝑡𝑎𝑠𝑘𝑓𝑖𝑙𝑒 
+/multitasklink - 𝐹𝑜𝑟 𝑙𝑖𝑛𝑘  [𝑊𝑜𝑟𝑘𝑒𝑟𝑠 & 𝑆𝑒𝑒𝑑𝑟 𝐿𝑖𝑛𝑘𝑠] 𝑀𝑒𝑡𝑎𝑑𝑎𝑡𝑎, 𝑅𝑒𝑛𝑎𝑚𝑒, 𝐼𝑛𝑑𝑒𝑥𝑎𝑢𝑑𝑖𝑜, 𝐼𝑛𝑑𝑒𝑥𝑠𝑢𝑏 = 𝑚𝑢𝑙𝑡𝑖𝑡𝑎𝑠𝑘𝑙𝑖𝑛𝑘
+compress - 𝑐𝑜𝑚𝑝𝑟𝑒𝑠𝑠 𝑡ℎ𝑒 𝑓𝑖𝑙𝑒 𝑎𝑠 480𝑝 ,𝑙𝑖𝑏𝑜𝑝𝑢𝑠[𝐴𝑛𝑖𝑚𝑒 & 𝑊𝑒𝑏𝑠𝑒𝑟𝑖𝑒𝑠 𝐵𝑒𝑠𝑡]
+swapaudio - 𝑅𝑒𝑜𝑟𝑑𝑒𝑟 𝑡ℎ𝑒 𝑠𝑒𝑞𝑢𝑒𝑛𝑐𝑒 [a-2-1-3-4  𝑓𝑜𝑟 𝑠𝑤𝑎𝑝 𝑎𝑢𝑑𝑖𝑜]
+swapsubitles - 𝑅𝑒𝑜𝑟𝑑𝑒𝑟 𝑡ℎ𝑒 𝑠𝑒𝑞𝑢𝑒𝑛𝑐𝑒 [s-2-1-3-4  𝑓𝑜𝑟 𝑠𝑤𝑎𝑝 𝑠𝑢𝑏𝑡𝑖𝑡𝑙𝑒]
 changemetadata - 𝑇𝑟𝑎𝑛𝑠𝑓𝑜𝑟𝑚 𝑡ℎ𝑒 𝑚𝑒𝑡𝑎𝑑𝑎𝑡𝑎
 removetags - 𝑇𝑜 𝑅𝑒𝑚𝑜𝑣𝑒 𝐴𝑙𝑙 𝑀𝑒𝑡𝑎𝑑𝑎𝑡𝑎 𝑇𝑎𝑔𝑠
 samplevideo - 𝐶𝑟𝑒𝑎𝑡𝑒 𝐴 𝑆𝑎𝑚𝑝𝑙𝑒 𝑉𝑖𝑑𝑒𝑜 🎞️
