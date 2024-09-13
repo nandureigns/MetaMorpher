@@ -2,6 +2,8 @@ import math, time
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import heroku3
 import os
+import io
+from googleapiclient.http import MediaIoBaseDownload
 
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 PROGRESS_BAR = """
@@ -134,3 +136,43 @@ async def upload_files(bot, chat_id, directory, base_path=""):
         elif os.path.isdir(item_path):
             await upload_files(bot, chat_id, item_path, base_path=os.path.join(base_path, item))
 
+async def drive_progress(current, total, ud_type, message, start):
+    now = time.time()
+    diff = now - start
+    
+    # Calculate the percentage and speed
+    percentage = current * 100 / total
+    speed = humanbytes(current / diff) + "/s"
+    # Create a short progress message
+    progress = f"{round(percentage, 2)}% - {humanbytes(current)} of {humanbytes(total)} @ {speed}"
+    try:
+        # Update the bot message with the short progress
+        await message.edit(
+            text=f"{ud_type}\n\nProgress: {progress}",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌟 Jᴏɪɴ Us 🌟", url="https://t.me/Sunrises24botupdates")]])
+        )
+    except Exception as e:
+        print(f"Error editing message: {e}")
+
+async def download_file_from_drive(service, file_id, file_name, message):
+    request = service.files().get_media(fileId=file_id)
+    file_buffer = io.BytesIO()
+    downloader = MediaIoBaseDownload(file_buffer, request)
+
+    done = False
+    start_time = time.time()
+
+    while not done:
+        status, done = downloader.next_chunk()
+        if status:
+            current_size = status.resumable_progress
+            total_size = status.total_size
+
+            # Update progress message
+            await drive_progress(current_size, total_size, "🚀 Downloading from Google Drive... ⚡", message, start_time)
+
+    file_buffer.seek(0)
+    with open(file_name, 'wb') as f:
+        f.write(file_buffer.read())
+
+    return file_name
