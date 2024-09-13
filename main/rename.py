@@ -30,6 +30,16 @@ import psutil
 from pymongo.errors import PyMongoError
 from yt_dlp import YoutubeDL
 from html_telegraph_poster import TelegraphPoster
+import logging
+
+logging.basicConfig(
+    filename='SunrisesBot.txt',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+# Example of logging a message
+logging.info('Bot started successfully!')
 
 # Initialize Telegraph
 telegraph = TelegraphPoster(use_api=True)
@@ -1675,7 +1685,7 @@ async def sample_video(bot, msg):
     await sts.delete()
 
  # Define restart_app command
-@Client.on_message(filters.command("restart") & filters.chat(AUTH_USERS))
+@Client.on_message(filters.command("restartheroku") & filters.chat(AUTH_USERS))
 async def restart_app(bot, msg):
     if not f'{msg.from_user.id}' == f'{int(AUTH_USERS)}':
         return await msg.reply_text("Only authorized user can restart!")
@@ -3407,6 +3417,89 @@ async def compress_media(bot, msg: Message):
         os.remove(file_thumb)
     await sts.delete()
     
+@Client.on_message(filters.private & filters.command("dleech"))
+async def rename_leech(bot, msg: Message):
+    global RENAME_ENABLED
+
+    if not RENAME_ENABLED:
+        return await msg.reply_text("Rename feature is currently disabled.")
+
+    user_id = msg.from_user.id
+
+    if len(msg.command) < 2 or not msg.reply_to_message:
+        return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, .zip).")
+
+    reply = msg.reply_to_message
+    media = reply.document or reply.audio or reply.video or reply.text
+    if not media:
+        return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, .zip).")
+
+    new_name = msg.text.split(" ", 1)[1]
+    sts = await msg.reply_text("🚀 Downloading... ⚡")
+    
+    # Extract the Google Drive link from the caption or message text
+    drive_url = reply.text or reply.caption
+    file_id = extract_id_from_url(drive_url)
+
+    if not file_id:
+        return await sts.edit("❌ Invalid Google Drive link.")
+
+    # Download the file from Google Drive with progress updates
+    downloaded_file = await download_file_from_drive(drive_service, file_id, new_name, sts)
+    filesize = humanbytes(os.path.getsize(downloaded_file))
+
+    if CAPTION:
+        try:
+            cap = CAPTION.format(file_name=new_name, file_size=filesize)
+        except KeyError as e:
+            return await sts.edit(text=f"Caption error: unexpected keyword ({e})")
+    else:
+        cap = f"{new_name}\n\n🌟 Size: {filesize}"
+
+    # Retrieve thumbnail from the database
+    thumbnail_file_id = await db.get_thumbnail(msg.from_user.id)
+    og_thumbnail = None
+    if thumbnail_file_id:
+        try:
+            og_thumbnail = await bot.download_media(thumbnail_file_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(media, 'thumbs') and media.thumbs:
+            try:
+                og_thumbnail = await bot.download_media(media.thumbs[0].file_id)
+            except Exception:
+                pass
+
+    await sts.edit("💠 Uploading... ⚡")
+
+    try:
+        await bot.send_document(msg.chat.id, document=downloaded_file, thumb=og_thumbnail, caption=cap, progress=progress_message, progress_args=("💠 Upload Started... ⚡", sts, time.time()))
+    except Exception as e:
+        return await sts.edit(f"Error: {e}")
+
+    os.remove(downloaded_file)
+    await sts.delete()
+
+@Client.on_message(filters.command('restart') & filters.user(ADMIN))
+async def restart_message(app, message):
+    reply = await message.reply_text('Restarting...')
+    textx = f"Done Restart...✅"
+    await reply.edit_text(textx)
+    try:
+        exit()
+    finally:
+        osexecl(executable, executable, "bot.py")
+
+
+@Client.on_message(filters.command('logs') & filters.user(ADMIN))
+async def log_file(b, m):
+    try:
+        await m.reply_document('SunrisesBot.txt')
+    except Exception as e:
+        await m.reply(str(e))
+                                                          
+
 
 if __name__ == '__main__':
     app = Client("my_bot", bot_token=BOT_TOKEN)
