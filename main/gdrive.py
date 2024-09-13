@@ -52,7 +52,23 @@ async def upload_to_google_drive(file_path, file_name, sts):
 
     return response.get('webViewLink')
 
-
+#Driveleech
+def extract_id_from_driveurl(url):
+    file_id = None
+    # Match the different URL patterns for Google Drive links
+    patterns = [
+        r'id=([a-zA-Z0-9-_]+)',  # Format 1: ?id=FILE_ID
+        r'/d/([a-zA-Z0-9-_]+)',  # Format 2: /d/FILE_ID/
+        r'/file/d/([a-zA-Z0-9-_]+)'  # Format 3: /file/d/FILE_ID/
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            file_id = match.group(1)
+            break
+    
+    return file_id
 
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 #clone
