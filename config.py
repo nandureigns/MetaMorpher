@@ -19,7 +19,7 @@ group = environ.get('GROUP', '-1002323281227')
 GROUP = int(group) if group and id_pattern.search(group) else None
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 SUNRISES_PIC= "https://graph.org/file/bd91761f6e938e2e6d23a.jpg"  # Replace with your Telegraph link
-AUTH_USERS = int(os.environ.get("AUTH_USERS", '5806876587'))
+AUTH_USERS = int(os.environ.get("AUTH_USERS", '6741198550'))
 WEBHOOK = bool(os.environ.get("WEBHOOK", True))
 PORT = int(os.environ.get("PORT", "8080"))
-LOG_CHANNEL_ID = os.environ.get("LOG_CHANNEL_ID", -1002323281227)
+LOG_CHANNEL_ID = os.environ.get("LOG_CHANNEL_ID", -1002156200962)
